@@ -1,19 +1,22 @@
-const zoomIncreaseRatioPerSecond = 1.01
+
+
+const zoomIncreaseRatioPerSecond = 1
 const mandelbrotMaxIteration = 100
 
 let fps;
 let info;
+let lastLoop=0;
 let canvas, context, program, buffer;
 let vertices;
-let lastLoop=0;
 let width, height;
-let zoom = .4;
-let position = {x:1.7, y:-1};
+let zoom = 300;
+let position = {x:800, y:400};
 let mouse = {
 	down:false,
 	x:0, 
 	y:0
 }
+
 
 let locations = {}
 
@@ -31,49 +34,52 @@ precision highp float;
 uniform float width;
 uniform float height;
 uniform float zoom;
-uniform float dx;
-uniform float dy;
+uniform float position_x;
+uniform float position_y;
 
 float mandelbrot(float x, float y) {
 	float temp;
 	float real = x;
-	float imaginary =y;
+	float imaginary = y;
 	for (float i = 0.0; i < 100.0; i++)
 	{
 		temp = real;
 		real = temp*temp - imaginary*imaginary + x;
 		imaginary = 2.0 * temp * imaginary + y;
 
-		if(real * imaginary > 200.0*zoom) 
+		if(real * imaginary > zoom) 
 		{
-			return i/100.0;
+			return i/40.0;
 		}
 	}
 	return 0.0;
 }
 
+
 void main() {
 
-	vec2 xy = gl_FragCoord.xy / vec2(width, height);
-	
-	float x = xy[0];
-	float y = xy[1];
-	float red = (y);
-	float green = (x);
-	float value = mandelbrot(x/zoom - dx,y/zoom + dy);
+	float x = gl_FragCoord.xy[0];
+	float y = gl_FragCoord.xy[1];
+
+	float red = x/width;
+	float green = y/height;
+	float value = mandelbrot((x-position_x)/zoom, (position_y-(height-y))/zoom);
 
 	gl_FragColor = vec4(value*red,value*green, value,1.0);
 }
-`;
-
+ `;
 
 function loadShader(context, type, source)
 {
 	const shader = context.createShader(type);
 	context.shaderSource(shader, source);
 	context.compileShader(shader);
+	if (!context.getShaderParameter(shader, context.COMPILE_STATUS)) {
+	    alert(context.getShaderInfoLog(shader));
+	}
 	return shader;
 }
+
 
 function init()
 {
@@ -82,6 +88,12 @@ function init()
 	context = canvas.getContext("webgl");
 	height = canvas.height;
 	width = canvas.width;
+
+
+	canvas.onmousedown = mousedown;
+	canvas.onmouseleave = mouseup;
+	canvas.onmouseup = mouseup;
+	canvas.onmousemove = mousemove;
 
 	vertices = [
 		-1.0,  1.0,
@@ -111,8 +123,8 @@ function init()
 	locations.width = context.getUniformLocation(program, 'width');
 	locations.height = context.getUniformLocation(program, 'height');
 	locations.zoom = context.getUniformLocation(program, 'zoom');
-	locations.dx = context.getUniformLocation(program, 'dx');
-	locations.dy = context.getUniformLocation(program, 'dy');
+	locations.position_x = context.getUniformLocation(program, 'position_x');
+	locations.position_y = context.getUniformLocation(program, 'position_y');
 
 	// bind constants and init context usage
   	const position = context.getAttribLocation(program, 'aVertexPosition');
@@ -123,7 +135,6 @@ function init()
 
 	context.uniform1f(locations.width, width);
 	context.uniform1f(locations.height, height);
-
 }
 
 function update(timestamp)
@@ -134,9 +145,12 @@ function update(timestamp)
 	// if mouse is down, update zoom and position
 	if(mouse.down)
 	{
-		zoom *= zoomIncreaseRatioPerSecond;
-		position.x -= (mouse.x - width/2) / (width*fps*zoom);
-		position.y -= (mouse.y - height/2) / (height*fps*zoom);
+		let zoomIncreaseRatio = zoomIncreaseRatioPerSecond / fps;
+		let dx = position.x-mouse.x
+		let dy = position.y-mouse.y
+		zoom += zoom * zoomIncreaseRatio;
+		position.x += (dx * zoomIncreaseRatio);
+		position.y += (dy * zoomIncreaseRatio);
 	}
 
 	// display fps
@@ -150,8 +164,10 @@ function update(timestamp)
 function draw()
 {
 	context.uniform1f(locations.zoom, zoom);
-	context.uniform1f(locations.dx, position.x);
-	context.uniform1f(locations.dy, position.y);
+	context.uniform1f(locations.canvas_width, width);
+	context.uniform1f(locations.canvas_height, height);
+	context.uniform1f(locations.position_x, position.x);
+	context.uniform1f(locations.position_y, position.y);
     context.drawArrays(context.TRIANGLE_STRIP, 0, 4);
 }
 

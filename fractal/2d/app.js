@@ -1,4 +1,4 @@
-const zoomIncreaseRatioPerSecond = .4
+const zoomIncreaseRatioPerSecond = .5
 const mandelbrotMaxIteration = 100
 
 let fps;
@@ -7,8 +7,8 @@ let canvas, context;
 let lastLoop=0;
 let bitmap, pixels;
 let width, height;
-let zoom = 400;
-let position = {x:2, y:1.5};
+let zoom = 300;
+let position = {x:800, y:400};
 let mouse = {
 	down:false,
 	x:0, 
@@ -56,9 +56,12 @@ function update(timestamp)
 	// if mouse is down, update zoom and position
 	if(mouse.down)
 	{
-		zoom += (zoom * zoomIncreaseRatioPerSecond) / fps;
-		position.x -= (mouse.x - width/2) / (zoom*fps);
-		position.y -= (mouse.y - height/2) / (zoom*fps);
+		let zoomIncreaseRatio = zoomIncreaseRatioPerSecond / fps;
+		let dx = position.x-mouse.x
+		let dy = position.y-mouse.y
+		zoom += zoom * zoomIncreaseRatio;
+		position.x += (dx * zoomIncreaseRatio);
+		position.y += (dy * zoomIncreaseRatio);
 	}
 
 	// compute each bitmap pixels color
@@ -68,9 +71,9 @@ function update(timestamp)
 		{
 			let red = (y/height) * 255;
 			let green = (x/width) * 255;
-			let value = mandelbrot((x/zoom)-position.x, (y/zoom)-position.y);
+			let value = mandelbrot((x-position.x)/zoom, (y-position.y)/zoom);
 			pixels[i++] = ~~(value * red); // red
-			pixels[i++] = ~~(value * green); // green
+			pixels[i++] = ~~(255*y/height); // green
 			pixels[i++] = ~~(value * 255); // blue
 			pixels[i++] = 255; // alpha
 
@@ -86,6 +89,7 @@ function update(timestamp)
 
 function draw()
 {
+	console.log(position.x, position.y);
 	// draw bitmap
 	context.putImageData(bitmap, 0, 0);  
 }
