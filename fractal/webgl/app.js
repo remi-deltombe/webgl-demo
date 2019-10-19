@@ -59,11 +59,11 @@ float mandelbrot(float x, float y) {
 void main() {
 
 	float x = gl_FragCoord.xy[0];
-	float y = gl_FragCoord.xy[1];
+	float y = height-gl_FragCoord.xy[1];
 
-	float red = x/width;
-	float green = y/height;
-	float value = mandelbrot((x-position_x)/zoom, (position_y-(height-y))/zoom);
+	float red = y/height;
+	float green = x/width;
+	float value = mandelbrot((x-position_x)/zoom, (position_y-y)/zoom);
 
 	gl_FragColor = vec4(value*red,value*green, value,1.0);
 }

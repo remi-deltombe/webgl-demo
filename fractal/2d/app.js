@@ -26,7 +26,7 @@ function mandelbrot(x,y)
 		imaginary = 2 * temp * imaginary + y;
 		if(real * imaginary > zoom)
 		{
-			return (i/mandelbrotMaxIteration);
+			return (i/40);
 		}
     }
     return 0;      
@@ -73,7 +73,7 @@ function update(timestamp)
 			let green = (x/width) * 255;
 			let value = mandelbrot((x-position.x)/zoom, (y-position.y)/zoom);
 			pixels[i++] = ~~(value * red); // red
-			pixels[i++] = ~~(255*y/height); // green
+			pixels[i++] = ~~(value * green); // green
 			pixels[i++] = ~~(value * 255); // blue
 			pixels[i++] = 255; // alpha
 
